@@ -1,0 +1,23 @@
+{
+  "projects": [
+    {
+      "id": "hac-flow",
+      "name": "HAC-Flow",
+      "type": "process",
+      "repo": "zwmhua2-lab2/HAC-Flow",
+      "planned": []
+    },
+    {
+      "id": "marketpulse",
+      "name": "MarketPulse-AI",
+      "type": "product",
+      "repo": "zwmhua2-lab2/MarketPulse-AI",
+      "planned": [
+        { "title": "实现 CSV 原子写入", "issue": null },
+        { "title": "增加 .gitignore 忽略运行产物", "issue": null },
+        { "title": "字段校验", "issue": null },
+        { "title": "分页抓取与时间窗口", "issue": null }
+      ]
+    }
+  ]
+}
