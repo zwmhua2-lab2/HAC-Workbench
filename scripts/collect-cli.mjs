@@ -1,5 +1,6 @@
 import { readFile as fsReadFile } from 'node:fs/promises';
-import { pathToFileURL } from 'node:url';
+import { realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { collectFacts } from './collect.mjs';
 import { writeSnapshot } from './snapshot-store.mjs';
 
@@ -25,5 +26,10 @@ export async function runCollectCli({ readFile = fsReadFile, collect = collectFa
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+export function isMainModule(argv1, moduleUrl, realpathFn = realpathSync) {
+  try { return Boolean(argv1) && realpathFn(argv1) === realpathFn(fileURLToPath(moduleUrl)); }
+  catch { return false; }
+}
+
+if (isMainModule(process.argv[1], import.meta.url))
   process.exitCode = await runCollectCli();
