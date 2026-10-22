@@ -19,7 +19,8 @@ function validPr(pr) {
 }
 
 const matchesHead = (pr) => typeof pr.tested_commit === 'string'
-  && pr.tested_commit.length > 0 && pr.head_sha.startsWith(pr.tested_commit);
+  && /^[a-f\d]{7,40}$/i.test(pr.tested_commit)
+  && pr.head_sha.toLowerCase().startsWith(pr.tested_commit.toLowerCase());
 
 /** Derive the first matching workflow state without IO, mutation, or an implicit clock. */
 export function deriveStatus(issue, prs, nowIso) {

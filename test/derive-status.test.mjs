@@ -54,7 +54,7 @@ test("Given open Issue、`risk='高'`、有 open PR 且 `qa=null`，When 推导�
 
 test("Given open Issue、`risk='低'`、open PR 的 `qa=null`，When 推导，Then 返回 `待合并`；Given `risk='高'`、open PR 的 `qa='PASS'`、`head_sha='abcdef12'`、`tested_commit='abc'`，When 推导，Then 返回 `待合并`（⑥）。", () => {
   assert.equal(derive(issue(), [pr()]), '待合并');
-  assert.equal(derive(issue({ risk: '高' }), [pr({ qa: 'PASS', tested_commit: 'abc' })]), '待合并');
+  assert.equal(derive(issue({ risk: '高' }), [pr({ qa: 'PASS', tested_commit: 'abcdef1' })]), '待合并');
 });
 
 test("Given open Issue、`risk='低'`、`prs=[]`、`created_at='2026-10-08T00:00:00.000Z'`、`nowIso='2026-10-22T00:00:00.000Z'`，When 推导，Then 返回 `待开工`（⑦恰好 14 天）。", () => {
@@ -91,7 +91,7 @@ test('Given 冻结 fixtures，When `node --test`，Then 以上状态断言全部
 });
 
 test('多 PR 按异常、待质检、待合并排序，未知风险不掩盖超期或异常', () => {
-  const ready = pr({ qa: 'PASS', tested_commit: 'abc' });
+  const ready = pr({ qa: 'PASS', tested_commit: 'abcdef1' });
   for (const prs of [[ready, pr()], [pr(), ready]]) {
     assert.equal(derive(issue({ risk: '高' }), prs), '待质检');
     assert.equal(derive(issue({ risk: '高' }), [...prs, pr({ qa: 'FAIL' })]), '异常');
