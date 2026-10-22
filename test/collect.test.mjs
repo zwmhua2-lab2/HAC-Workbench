@@ -9,7 +9,7 @@ const manifest = { projects: [{ id: 'hac-flow', repo: 'zwmhua2-lab2/HAC-Flow' },
 const issue = { number: 1, title: 'Issue', body: '原始正文', state: 'open',
   created_at: nowIso, updated_at: nowIso, closed_at: null, html_url: 'https://github.com/a/b/issues/1' };
 const pr = { ...issue, number: 2, title: 'PR', body: 'PR 正文', merged_at: null,
-  head: { sha: 'ABCDEF1234567890abcdef1234567890abcdef1234' } };
+  head: { sha: 'ABCDEF1234567890abcdef1234567890abcdef12' } };
 const pages = () => [[issue], [pr], [], []];
 const response = (data, status = 200) => ({ status, json: async () => data });
 function harness(data = pages()) {
