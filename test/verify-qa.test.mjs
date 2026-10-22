@@ -65,8 +65,8 @@ test('Given 可信 `MEMBER` 评论同时包含 `QA 结论：FAIL` 与匹配的 4
 });
 test('Given改动文件包含 `ARCHITECTURE.md`、`.github/workflows/test.yml`，When 推导，Then `exitCode===0`、完整文件列表包含两路径且红牌提示含「需人工确认已获架构批准」。', async () => {
   const paths = ['ARCHITECTURE.md', '.github/workflows/test.yml', 'AGENTS.md', 'vendor/parser.mjs',
-    'projects.json', 'package.json', 'package-lock.json', 'test/config.mjs', 'vitest.config.ts'];
-  const plain = ['docs/ARCHITECTURE.md', '.github-other/x', 'vendors/x', 'src/package.json'];
+    'projects.json', 'package.json', 'package-lock.json', 'test/config.mjs', 'vitest.config.ts', 'src/package.json'];
+  const plain = ['docs/ARCHITECTURE.md', '.github-other/x', 'vendors/x'];
   const out = await run({ files: [paths.map(filename => ({ filename })), [], plain.map(filename => ({ filename }))] });
   assert.equal(out.exitCode, 0);
   for (const path of [...paths, ...plain]) assert.ok(out.report.includes(`- ${path}`));
