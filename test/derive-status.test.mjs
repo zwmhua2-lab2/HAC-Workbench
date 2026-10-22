@@ -60,8 +60,10 @@ test('Given 冻结 fixtures，When `node --test`，Then 以上状态断言全部
   if (process.env.DERIVE_STATUS_NEGATIVE_ASSERTION === '1') {
     assert.equal(derive(input, prs), '故意不匹配的断言');
   } else {
+    const childEnv = { ...process.env, DERIVE_STATUS_NEGATIVE_ASSERTION: '1' };
+    delete childEnv.NODE_TEST_CONTEXT; // Start a fresh runner, not an inherited test worker.
     const child = spawnSync(process.execPath, ['--test', '--test-name-pattern=^Given 冻结 fixtures', import.meta.filename], {
-      env: { ...process.env, DERIVE_STATUS_NEGATIVE_ASSERTION: '1' }, encoding: 'utf8', timeout: 10000,
+      env: childEnv, encoding: 'utf8', timeout: 10000,
     });
     assert.ifError(child.error);
     assert.equal(child.status, 1);
