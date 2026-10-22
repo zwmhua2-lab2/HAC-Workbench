@@ -9,6 +9,25 @@ const issue = (patch = {}) => ({ ...fixture.issue, ...patch });
 const pr = (patch = {}) => ({ ...fixture.pr, ...patch });
 const derive = (i = issue(), prs = [], now = fixture.now) => deriveStatus(i, prs, now);
 
+test("Given 高风险 open PR、`qa='PASS'`、`tested_commit` 为 1–6 位十六进制（如 `'8'`、`'abc'`），When 推导，Then 返回 `待质检`。", () => {
+  for (const tested_commit of ['8', 'ab', 'abc', 'abcd', 'abcde', 'abcdef']) {
+    const head_sha = tested_commit.padEnd(40, '0');
+    assert.equal(derive(issue({ risk: '高' }), [pr({ qa: 'PASS', head_sha, tested_commit })]), '待质检');
+  }
+});
+
+test('Given 同样输入但 `tested_commit` 为 7 位及以上且为 head 前缀，When 推导，Then 返回 `待合并`。', () => {
+  const head = 'abcdef1234567890abcdef1234567890abcdef12';
+  for (let length = 7; length <= 40; length++) {
+    for (const [head_sha, tested_commit] of [
+      [head, head.slice(0, length).toUpperCase()],
+      [head.toUpperCase(), head.slice(0, length)],
+    ]) {
+      assert.equal(derive(issue({ risk: '高' }), [pr({ qa: 'PASS', head_sha, tested_commit })]), '待合并');
+    }
+  }
+});
+
 test("Given `issue.state='closed'`，且 PR 为 `{state:'closed',merged:false,qa:'FAIL',scope:'violation'}`，When 调用 `deriveStatus`，Then 返回 `已完成`（①优先）。", () => {
   assert.equal(derive(issue({ state: 'closed' }), [pr({ state: 'closed', qa: 'FAIL', scope: 'violation' })]), '已完成');
 });
