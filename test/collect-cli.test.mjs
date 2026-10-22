@@ -79,3 +79,28 @@ test('Given `node --test` 与两项新增测试文件，When 全量执行，Then
     assert.deepEqual(JSON.parse(await fs.readFile(path.join(dir, 'snapshots/projects.json'), 'utf8')).projects, data.projects);
   }
 });
+test('Given 路径别名与模块路径，When 注入 realpath 判定主模块，Then 双方均归一化，同源为 true、异源或路径不存在为 false。', async () => {
+  const { isMainModule } = await import('../scripts/collect-cli.mjs');
+  const moduleUrl = new URL('../scripts/collect-cli.mjs', import.meta.url), modulePath = fileURLToPath(moduleUrl), calls = [];
+  const resolve = value => { calls.push(value); return ['alias', modulePath].includes(value) ? 'real' : 'other'; };
+  assert.equal(isMainModule('alias', moduleUrl, resolve), true); assert.deepEqual(calls, ['alias', modulePath]);
+  assert.equal(isMainModule('other', moduleUrl, resolve), false);
+  for (const argv of [undefined, '']) assert.equal(isMainModule(argv, moduleUrl, () => { throw Error('missing'); }), false);
+  for (const missing of ['alias', modulePath]) assert.equal(isMainModule('alias', moduleUrl, value => {
+    if (value === missing) throw Error('missing'); return 'real';
+  }), false);
+});
+test('Given Windows junction，When 从真实路径及别名路径启动 CLI，Then 均退出 0、精确输出 SNAPSHOT_OK 且生成完整快照。', { skip: process.platform !== 'win32' }, async t => {
+  const dir = await setup(t), root = path.join(dir, 'real'), alias = path.join(dir, 'alias');
+  await fs.mkdir(path.join(root, 'scripts'), { recursive: true });
+  for (const file of ['collect-cli.mjs', 'snapshot-store.mjs', 'collect.mjs'])
+    await fs.copyFile(new URL('../scripts/' + file, import.meta.url), path.join(root, 'scripts', file));
+  await fs.writeFile(path.join(root, 'projects.json'), JSON.stringify(manifest)); await fs.symlink(root, alias, 'junction');
+  const bootstrap = 'data:text/javascript,' + encodeURIComponent('globalThis.fetch = async () => ({status:200,json:async()=>[]});');
+  for (const cwd of [root, alias]) {
+    const result = spawnSync(process.execPath, ['--import', bootstrap, 'scripts/collect-cli.mjs'], { cwd, encoding: 'utf8' });
+    assert.equal(result.status, 0); assert.equal(result.stdout, 'SNAPSHOT_OK\n'); assert.equal(result.stderr, '');
+    const snapshot = path.join(root, 'snapshots/projects.json');
+    assert.deepEqual(JSON.parse(await fs.readFile(snapshot, 'utf8')).projects, data.projects); await fs.unlink(snapshot);
+  }
+});
