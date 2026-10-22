@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import * as annotations from '../scripts/annotate.mjs';
 
 const { parseRisk, parseQa } = annotations;
-const a = 'ABCDEF0123456789abcdef0123456789ABCDEF0123', b = 'b'.repeat(40);
+const a = 'ABCDEF0123456789abcdef0123456789ABCDEF01', b = 'b'.repeat(40);
 const comment = (patch = {}) => ({ body: `QA 结论：PASS\n被测 commit：${a}`,
   created_at: '2026-10-22T01:00:00Z', id: 1, author_association: 'MEMBER', ...patch });
 const result = (qa = 'PASS', tested_commit = a) => ({ qa, tested_commit });
@@ -130,4 +130,26 @@ test('仅导出两个同步解析函数，输出不补充状态或默认字段',
   assert.deepEqual(Object.keys(parseQa([comment()])).sort(), ['qa', 'tested_commit']);
   assert.equal(parseQa([comment()]) instanceof Promise, false);
   assert.equal(parseRisk('无标注'), null);
+});
+
+test('隔离环境加载及调用解析器，不提供网络、文件或进程能力', () => {
+  const program = [
+    "import { readFileSync } from 'node:fs'; import vm from 'node:vm';",
+    "import assert from 'node:assert/strict';",
+    "const context = vm.createContext({ fetch: undefined, process: undefined, console: undefined });",
+    "const source = readFileSync('scripts/annotate.mjs', 'utf8');",
+    "const module = new vm.SourceTextModule(source, { context });",
+    "await module.link(() => { throw Error('IO/import forbidden'); }); await module.evaluate();",
+    "assert.equal(module.namespace.parseRisk('风险：低'), '低');",
+    "const sha = 'A'.repeat(40);",
+    "const comments = [{ body: 'QA 结论：PASS\\n被测 commit：' + sha,",
+    "created_at: '2026-10-23T01:00:00Z', id: 1, author_association: 'OWNER' }];",
+    "assert.equal(JSON.stringify(module.namespace.parseQa(comments)),",
+    "JSON.stringify({ qa: 'PASS', tested_commit: sha }));",
+  ].join('\n');
+  const child = spawnSync(process.execPath,
+    ['--experimental-vm-modules', '--input-type=module', '--eval', program],
+    { cwd: new URL('../', import.meta.url), encoding: 'utf8', timeout: 10000 });
+  assert.ifError(child.error);
+  assert.equal(child.status, 0, child.stdout + child.stderr);
 });
