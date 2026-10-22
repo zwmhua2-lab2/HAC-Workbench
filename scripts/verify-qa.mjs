@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
+import { realpathSync } from 'node:fs';
 
 async function defaultGhFn(args) {
   return new Promise((resolve, reject) => {
@@ -89,7 +89,12 @@ export async function verifyPr({ owner, repo, prNumber, ghFn = defaultGhFn } = {
   return { exitCode, report };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+export function isMainModule(argv1, moduleUrl, realpathFn = realpathSync) {
+  try { return Boolean(argv1) && realpathFn(argv1) === realpathFn(fileURLToPath(moduleUrl)); }
+  catch { return false; }
+}
+
+if (isMainModule(process.argv[1], import.meta.url)) {
   const argument = process.argv[2];
   const prNumber = process.argv.length === 3 && /^[1-9]\d*$/.test(argument) ? Number(argument) : NaN;
   const { exitCode, report } = await verifyPr({ owner: 'zwmhua2-lab2', repo: 'HAC-Workbench', prNumber });
