@@ -5,9 +5,9 @@
 ## 已确定的边界
 
 1. **冻结约束**：只读取 HAC-Metrics 的 `data/` 下 JSON。解析逻辑以 vendor 副本放入本仓库，文件头注明来源 commit。HAC-Metrics 解冻并有新 commit 时，手动同步一次，并在 CHANGELOG 记录。不做自动同步。
-2. **运行健康度**：在本仓库 Actions 中运行 MarketPulse-AI 的公开入口。运行测试的 job 不带任何 secret。运行的代码版本由 `projects.json` 中的 `runtime.ref` 固定，更新需开 Issue 说明原因。
-3. **私有仓库，Free 套餐**：页面以 Actions artifact 产出，下载后本地打开。
-4. **鉴权**：仅使用 workflow 自带的 `GITHUB_TOKEN`。目标仓库均为公开，不需要 PAT。某个项目转为私有时，另开 Issue 补 PAT。
+2. **运行健康度**：在本仓库 Actions 中运行 MarketPulse-AI 的公开入口。运行外部代码的 job 声明 `permissions: contents: read`，所有 `checkout` 设 `persist-credentials: false`，不向该 job 传入任何 token。运行的代码版本由 `projects.json` 中的 `runtime.ref` 固定，更新需开 Issue 说明原因。
+3. **公开仓库，Pages 托管**：页面由 GitHub Pages 发布。HAC-Metrics 已公开，本仓库内容（Issue 号、PR 号、时间戳、进度）不含敏感信息。
+4. **鉴权**：公开仓库读取不需要 PAT。`GITHUB_TOKEN` 只用于提交快照，且该 job 不执行任何外部代码。
 
 ## 当前阶段
 
