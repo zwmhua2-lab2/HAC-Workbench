@@ -116,3 +116,16 @@ test('Given 注入假 `ghFn`，When `node --test` 执行本卡测试，Then 不�
   assert.match(source, /execFile\('gh', args,/); assert.match(source, /shell:\s*false/);
   assert.match(source, /timeout:\s*5000/);
 });
+test('精确字段校验拒绝带换行的 PR SHA/仓库名和非精确 QA 标签；空分页合法', async () => {
+  const badHead = await run({ pull: { ...pr, head: { sha: a + '\n' } } });
+  assert.equal(badHead.exitCode, 2);
+  for (const input of [{ owner: 'owner\n' }, { repo: 'repo\n' }]) {
+    const out = await run({ input }); assert.equal(out.exitCode, 2); assert.equal(out.calls.length, 0);
+  }
+  for (const body of [`QA 结论：PASS\n被测 COMMIT：${a}`, `QA 结论：PASSED\n被测 commit：${a}`]) {
+    const out = await run({ comments: [[qa(a, { body })]] });
+    assert.equal(out.exitCode, 0); assert.match(out.report, /无有效 QA 结论／需人工判断/);
+  }
+  const empty = await run({ comments: [[], []], files: [[], []] });
+  assert.equal(empty.exitCode, 0); assert.match(empty.report, /红牌提示：无/);
+});
