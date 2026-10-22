@@ -97,3 +97,20 @@ test('非法或缺失输入返回未知，关闭 Issue 优先于其余 PR 条件
   assert.equal(deriveStatus(issue({ state: 'closed' }), null, fixture.now), '已完成');
   assert.equal(deriveStatus(issue(), []), '未知');
 });
+
+test('离线隔离环境中加载纯函数，无网络、进程或文件系统能力', () => {
+  const child = spawnSync(process.execPath, ['--experimental-vm-modules', '--input-type=module', '-e', `
+    import { readFileSync } from 'node:fs';
+    import { createContext, SourceTextModule } from 'node:vm';
+    import assert from 'node:assert/strict';
+    const source = readFileSync(new URL('./scripts/derive-status.mjs', import.meta.url), 'utf8');
+    const fixture = JSON.parse(readFileSync(new URL('./test/fixtures/derive-status.json', import.meta.url)));
+    const context = createContext({});
+    const module = new SourceTextModule(source, { context });
+    await module.link(() => { throw new Error('禁止外部模块'); });
+    await module.evaluate({ timeout: 1000 });
+    assert.equal(module.namespace.deriveStatus(fixture.issue, [fixture.pr], fixture.now), '待合并');
+  `], { cwd: new URL('../', import.meta.url), encoding: 'utf8', timeout: 10000 });
+  assert.ifError(child.error);
+  assert.equal(child.status, 0, child.stdout + child.stderr);
+});
