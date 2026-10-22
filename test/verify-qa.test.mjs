@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import * as fs from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { verifyPr } from '../scripts/verify-qa.mjs';
 
 const a = 'a'.repeat(40), b = 'b'.repeat(40);
@@ -128,4 +133,52 @@ test('精确字段校验拒绝带换行的 PR SHA/仓库名和非精确 QA 标�
   }
   const empty = await run({ comments: [[], []], files: [[], []] });
   assert.equal(empty.exitCode, 0); assert.match(empty.report, /红牌提示：无/);
+});
+
+test('Given Windows junction，When 从真实路径和 junction 路径启动 verify-qa，Then 均实际输出报告且非法参数退出 2',
+  { skip: process.platform !== 'win32' }, async () => {
+    const dir = await fs.mkdtemp(path.join(tmpdir(), 'hac-vq-')), alias = path.join(dir, 'alias');
+    const root = fileURLToPath(new URL('../', import.meta.url));
+    const bootstrap = 'data:text/javascript,' + encodeURIComponent(`
+      import cp from 'node:child_process';
+      import { syncBuiltinESMExports } from 'node:module';
+      cp.execFile = (file, args, options, callback) => {
+        if (file !== 'gh' || args[2] !== 'GET') throw Error('Unexpected command');
+        const value = args[3].endsWith('/pulls/12') ? ${JSON.stringify(pr)} : [[]];
+        queueMicrotask(() => callback(null, JSON.stringify(value)));
+      };
+      syncBuiltinESMExports();`);
+    try {
+      await fs.symlink(root, alias, 'junction');
+      for (const cwd of [root, alias]) for (const argument of ['12', 'invalid']) {
+        const result = spawnSync(process.execPath, ['--import', bootstrap, 'scripts/verify-qa.mjs', argument],
+          { cwd, encoding: 'utf8', timeout: 10000 });
+        assert.ifError(result.error);
+        if (argument === '12') {
+          assert.equal(result.status, 0); assert.equal(result.stderr, '');
+          assert.match(result.stdout, /PR #12\nPR state：OPEN/);
+          assert.match(result.stdout, /仅机械检查未阻断，不等于 QA PASS\/允许合并/);
+          assert.match(result.stdout, /最终退出码：0/);
+        } else {
+          assert.equal(result.status, 2); assert.equal(result.stdout, '');
+          assert.match(result.stderr, /工具或环境错误/); assert.match(result.stderr, /最终退出码：2/);
+        }
+      }
+    } finally {
+      await fs.unlink(alias).catch(error => { if (error.code !== 'ENOENT') throw error; });
+      await fs.rmdir(dir);
+    }
+  });
+
+test('Given 主模块路径别名或 realpath 异常，When isMainModule，Then 两边归一化比较且异常返回 false', async () => {
+  const { isMainModule } = await import('../scripts/verify-qa.mjs'), calls = [];
+  assert.equal(isMainModule('alias', import.meta.url, value => { calls.push(value); return 'canonical'; }), true);
+  assert.deepEqual(calls, ['alias', fileURLToPath(import.meta.url)]);
+  assert.equal(isMainModule('different', import.meta.url, value => value), false);
+  assert.equal(isMainModule(undefined, import.meta.url, () => { throw Error('must not call'); }), false);
+  for (const failOn of [1, 2]) {
+    let count = 0;
+    assert.equal(isMainModule('alias', import.meta.url, () => { if (++count === failOn) throw Error('missing'); return 'x'; }), false);
+    assert.equal(count, failOn);
+  }
 });
