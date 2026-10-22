@@ -29,7 +29,7 @@
 - 修复完成后在 PR 下说明改了哪些文件，等待 Human 再次质检。不要自行生成质检指令。
 
 ## 合并前机械核验（脚本合入 main 且自身测试通过后生效）
-- 生效条件：`scripts/verify-qa.mjs` 已合入 main 且其自身测试实际通过。当前 main 尚无该脚本，本条未生效；不得以「脚本不存在」阻止合并，也不得视为已实施。
+- 生效条件：`scripts/verify-qa.mjs` 已合入 main 且其自身测试实际通过。条件满足时本条生效；未满足时不得以「脚本不存在」阻止合并，也不得视为已实施。
 - 生效后，合并前由 Human 运行 `node scripts/verify-qa.mjs <PR号>`，退出码 0 才可合并。这是软门禁、由 Human 手动执行；分支保护式的强制门禁留至 M3。
 - 有效 QA 评论：该 PR 评论中时间最新、且同一条评论内同时包含 `QA 结论：(PASS|FAIL)` 与 `被测 commit：<40 位十六进制>`，且评论作者 `author_association` 属于 `OWNER`/`MEMBER`/`COLLABORATOR`。否则视为无有效 QA 结论。
 - 机械阻断严格仅三类：① 有效 QA 的被测 commit 与 PR 最新 head 不一致；② PR 总改动（新增+删除，含测试）> 300 行；③ PR 状态非 `OPEN`。其余情况不得冒充上述机械失败。
