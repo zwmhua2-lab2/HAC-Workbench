@@ -1,15 +1,15 @@
 import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
-const execute = promisify(execFile);
 async function defaultGhFn(args) {
-  const { stdout } = await execute('gh', args, { shell: false, timeout: 5000, maxBuffer: 32 * 1024 * 1024 });
-  return stdout;
+  return new Promise((resolve, reject) => {
+    execFile('gh', args, { shell: false, timeout: 5000, maxBuffer: 32 * 1024 * 1024 },
+      (error, stdout) => error ? reject(error) : resolve(stdout));
+  });
 }
 const record = value => value !== null && typeof value === 'object' && !Array.isArray(value);
-const sha = value => typeof value === 'string' && /^[a-f\d]{40}$/i.test(value);
+const sha = value => typeof value === 'string' && value.length === 40 && /^[a-f\d]{40}$/i.test(value);
 const count = value => Number.isSafeInteger(value) && value >= 0;
 const requireValid = condition => { if (!condition) throw new Error('Invalid input'); };
 const unknownQa = '无有效 QA 结论／需人工判断';
@@ -24,7 +24,7 @@ function candidate(comment) {
     || typeof comment.body !== 'string' || !utc(comment.created_at)
     || !Number.isSafeInteger(comment.id) || comment.id <= 0) return null;
   const conclusion = /QA 结论：(PASS|FAIL)(?![\w])/.exec(comment.body);
-  const tested = /被测 commit：([a-f\d]{40})(?![\w])/i.exec(comment.body);
+  const tested = /被测 commit：([a-fA-F\d]{40})(?![\w])/.exec(comment.body);
   return conclusion && tested ? { qa: conclusion[1], tested: tested[1],
     createdAt: comment.created_at, id: comment.id } : null;
 }
@@ -44,6 +44,7 @@ export async function verifyPr({ owner, repo, prNumber, ghFn = defaultGhFn } = {
   try {
     requireValid(typeof owner === 'string' && /^[a-z\d](?:[a-z\d-]*[a-z\d])?$/i.test(owner)
       && typeof repo === 'string' && /^[a-z\d_.-]+$/i.test(repo) && !['.', '..'].includes(repo)
+      && !/\s/.test(owner + repo)
       && Number.isSafeInteger(prNumber) && prNumber > 0 && typeof ghFn === 'function');
     const base = `repos/${owner}/${repo}`;
     async function get(endpoint, paginated = false) {
