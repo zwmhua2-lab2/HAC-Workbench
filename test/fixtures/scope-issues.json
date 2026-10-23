@@ -1,0 +1,18 @@
+[
+  {
+    "issue": 6,
+    "url": "https://github.com/zwmhua2-lab2/HAC-Workbench/issues/6",
+    "excerpt": "## 允许修改\n- 允许：`scripts/collect.mjs`、`test/collect.test.mjs`、`test/fixtures/**`（仅本卡 mock JSON）。\n- 禁止：`snapshots/**`（本卡只读数据，不落盘），以及 C5 红牌文件及一切未列出的路径。\n- 依赖：零新增；需要新增时停下询问。"
+  },
+  {
+    "issue": 13,
+    "url": "https://github.com/zwmhua2-lab2/HAC-Workbench/issues/13",
+    "excerpt": "## 允许修改\n- 允许：`scripts/annotate.mjs`、`test/annotate.test.mjs`、`test/fixtures/**`（仅本卡测试 fixture）。\n- 禁止：所有未列路径，特别是 `scripts/derive-status.mjs`、`scripts/collect.mjs`、`scripts/verify-qa.mjs` 及 C5 全部红牌文件。\n- 依赖：零新增；如必须新增则停下来询问。"
+  },
+  {
+    "issue": 16,
+    "url": "https://github.com/zwmhua2-lab2/HAC-Workbench/issues/16",
+    "excerpt": "## 允许修改\n- 允许：`ARCHITECTURE.md`\n- 禁止：其余所有文件与架构章节；尤其 `AGENTS.md`、`projects.json`、`scripts/derive-status.mjs`、`scripts/verify-qa.mjs` 和采集/解析脚本。\n- 依赖：无。"
+  }
+]
+
