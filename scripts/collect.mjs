@@ -10,6 +10,15 @@ function utc(value) {
 function requireValid(condition, message) {
   if (!condition) throw new Error(message);
 }
+function commentFact(row) {
+  requireValid(record(row) && Number.isSafeInteger(row.id) && row.id > 0
+    && typeof row.body === 'string' && typeof row.author_association === 'string'
+    && typeof row.created_at === 'string'
+    && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(row.created_at)
+    && utc(row.created_at), 'Invalid comment');
+  const { id, body, created_at, author_association } = row;
+  return { id, body, created_at, author_association };
+}
 function fact(row, pull) {
   requireValid(record(row) && Number.isSafeInteger(row.number) && row.number > 0
     && typeof row.title === 'string' && (row.body === null || typeof row.body === 'string')
@@ -69,12 +78,12 @@ export async function collectFacts(manifest, { fetchFn = globalThis.fetch, nowIs
       const result = [];
       for (let page = 1; ; page++) {
         const rows = await get('https://api.github.com/repos/' + repo + '/' + endpoint
-          + '?state=all&per_page=100&page=' + page);
+          + (endpoint.endsWith('/comments') ? '?' : '?state=all&') + 'per_page=100&page=' + page);
         requireValid(rows.length <= 100, 'Oversized page');
         for (const row of rows) {
           requireValid(record(row), 'Invalid row');
           if (endpoint === 'issues' && Object.hasOwn(row, 'pull_request')) continue;
-          result.push(fact(row, endpoint === 'pulls'));
+          result.push(endpoint.endsWith('/comments') ? commentFact(row) : fact(row, endpoint === 'pulls'));
         }
         if (rows.length < 100) return result;
       }
@@ -83,6 +92,7 @@ export async function collectFacts(manifest, { fetchFn = globalThis.fetch, nowIs
     for (const { id, repo } of manifest.projects) {
       const issues = await list(repo, 'issues');
       const prs = await list(repo, 'pulls');
+      for (const pr of prs) pr.comments = await list(repo, 'issues/' + pr.number + '/comments');
       projects.push({ id, issues, prs });
     }
     return { as_of: nowIso, projects };
