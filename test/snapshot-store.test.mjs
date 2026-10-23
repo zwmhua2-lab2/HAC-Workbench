@@ -12,7 +12,8 @@ const row = { number: 1, title: '事实', body: null, state: 'open', created_at:
   updated_at: as_of, closed_at: null, html_url: 'https://github.com/a/b/issues/1' };
 const data = await collectFacts({ projects: [{ id: 'a', repo: 'a/b' }, { id: 'b', repo: 'a/c' }] },
   { nowIso: as_of, fetchFn: async url => ({ status: 200, json: async () =>
-    url.includes('/pulls?') ? [{ ...row, merged_at: null, head: { sha: 'a'.repeat(40) } }] : [row] }) });
+    url.includes('/comments?') ? [] :
+      url.includes('/pulls?') ? [{ ...row, merged_at: null, head: { sha: 'a'.repeat(40) } }] : [row] }) });
 async function setup(t, existing = true) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'hac-store-'));
   t.after(() => fs.rm(dir, { recursive: true, force: true }));
