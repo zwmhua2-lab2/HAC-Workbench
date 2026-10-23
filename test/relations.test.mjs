@@ -125,4 +125,3 @@ test('契约边界：空白、围栏开关、安全整数及整行校验', () =>
   check([1, Number.MAX_SAFE_INTEGER], [pr(9, 'Closes #1, fixes #9007199254740991')],
     linked([1, [9]], [Number.MAX_SAFE_INTEGER, [9]]));
 });
-
