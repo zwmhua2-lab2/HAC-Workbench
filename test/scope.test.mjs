@@ -138,4 +138,3 @@ test("Given 已提交的固定 fixture、冻结的 `changedFiles` 数组和原�
   assert.ifError(child.error);
   assert.equal(child.status, 0, child.stdout + child.stderr);
 });
-

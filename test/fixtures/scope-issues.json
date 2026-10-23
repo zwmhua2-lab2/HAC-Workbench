@@ -15,4 +15,3 @@
     "excerpt": "## 允许修改\n- 允许：`ARCHITECTURE.md`\n- 禁止：其余所有文件与架构章节；尤其 `AGENTS.md`、`projects.json`、`scripts/derive-status.mjs`、`scripts/verify-qa.mjs` 和采集/解析脚本。\n- 依赖：无。"
   }
 ]
-
